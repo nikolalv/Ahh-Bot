@@ -3,80 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AHH_Bot.Commands;
-using Remotion.Linq.Parsing.ExpressionVisitors.MemberBindings;
 
 namespace AHH_Bot.Database
 {
     public static class Data
     {
         public static List<Voting.Vote> CurrentVotes = new List<Voting.Vote>();
-
-
-        // Returns if a user exists in the database and creates a new user if it doesn't
-        public static bool UserExisted(DatabaseContext databaseContext, ulong UserID, int ChocolateCount = 0, int CommandsExecuted = 0, int CompletedChallenges = 0, int MessagesSent = 0, int ReactedMessages = 0, int VotesCreated = 0, string Courses = "")
-        {
-            if (!databaseContext.Users.Any(x => x.UserID == UserID))
-            {
-                databaseContext.Users.Add(new User
-                {
-                    UserID = UserID,
-                    CompletedChallenges = CompletedChallenges,
-                    ChocolateCount = ChocolateCount,
-                    CommandsExecuted = CommandsExecuted,
-                    MessagesSent = MessagesSent,
-                    ReactedMessages = ReactedMessages,
-                    VotesCreated = VotesCreated,
-                    Courses = Courses
-                });
-                return false;
-            }
-            return true;
-        }
-
-        public class Chocolates
-        {
-            public static async Task AddChocolates(ulong UserID, int chocolateAmount)
-            {
-                using (var databaseContext = new DatabaseContext())
-                {
-                    if (UserExisted(databaseContext, UserID, ChocolateCount: chocolateAmount))
-                    {
-                        User currentUser = databaseContext.Users.First(x => x.UserID == UserID);
-                        currentUser.ChocolateCount += chocolateAmount;
-                        databaseContext.Users.Update(currentUser);
-                    }
-
-                    await databaseContext.SaveChangesAsync();
-                }
-            }
-
-            public static async Task SetChocolates(ulong UserID, int chocolateAmount)
-            {
-                using (var databaseContext = new DatabaseContext())
-                {
-                    if (UserExisted(databaseContext, UserID, ChocolateCount: chocolateAmount))
-                    {
-                        User currentUser = databaseContext.Users.First(x => x.UserID == UserID);
-                        currentUser.ChocolateCount = chocolateAmount;
-                        databaseContext.Users.Update(currentUser);
-                    }
-
-                    await databaseContext.SaveChangesAsync();
-                }
-            }
-
-            public static int GetChocolateAmount(ulong UserID)
-            {
-                using (var databaseContext = new DatabaseContext())
-                    return databaseContext.Users.Where(x => x.UserID == UserID).Select(x => x.ChocolateCount).FirstOrDefault();
-            }
-
-            public static ulong[] GetTopChoco(int count)
-            {
-                using (var databaseContext = new DatabaseContext())
-                    return databaseContext.Users.OrderByDescending(x => x.ChocolateCount).Select(x => x.UserID).Take(count).ToArray();
-            }
-        }
 
         public static class Challenges
         {
@@ -103,6 +35,27 @@ namespace AHH_Bot.Database
 
         public class Users
         {
+            // Returns if a user exists in the database and creates a new user if it doesn't
+            public static bool UserExisted(DatabaseContext databaseContext, ulong UserID, int ChocolateCount = 0, int CommandsExecuted = 0, int CompletedChallenges = 0, int MessagesSent = 0, int ReactedMessages = 0, int VotesCreated = 0, string Courses = "")
+            {
+                if (!databaseContext.Users.Any(x => x.UserID == UserID))
+                {
+                    databaseContext.Users.Add(new User
+                    {
+                        UserID = UserID,
+                        CompletedChallenges = CompletedChallenges,
+                        ChocolateCount = ChocolateCount,
+                        CommandsExecuted = CommandsExecuted,
+                        MessagesSent = MessagesSent,
+                        ReactedMessages = ReactedMessages,
+                        VotesCreated = VotesCreated,
+                        Courses = Courses
+                    });
+                    return false;
+                }
+                return true;
+            }
+
             public class Messages
             {
                 #region Messages
@@ -198,6 +151,51 @@ namespace AHH_Bot.Database
                 #endregion
             }
 
+            public class Chocolates
+            {
+                public static async Task AddChocolates(ulong UserID, int chocolateAmount)
+                {
+                    using (var databaseContext = new DatabaseContext())
+                    {
+                        if (UserExisted(databaseContext, UserID, ChocolateCount: chocolateAmount))
+                        {
+                            User currentUser = databaseContext.Users.First(x => x.UserID == UserID);
+                            currentUser.ChocolateCount += chocolateAmount;
+                            databaseContext.Users.Update(currentUser);
+                        }
+
+                        await databaseContext.SaveChangesAsync();
+                    }
+                }
+
+                public static async Task SetChocolates(ulong UserID, int chocolateAmount)
+                {
+                    using (var databaseContext = new DatabaseContext())
+                    {
+                        if (UserExisted(databaseContext, UserID, ChocolateCount: chocolateAmount))
+                        {
+                            User currentUser = databaseContext.Users.First(x => x.UserID == UserID);
+                            currentUser.ChocolateCount = chocolateAmount;
+                            databaseContext.Users.Update(currentUser);
+                        }
+
+                        await databaseContext.SaveChangesAsync();
+                    }
+                }
+
+                public static int GetChocolateAmount(ulong UserID)
+                {
+                    using (var databaseContext = new DatabaseContext())
+                        return databaseContext.Users.Where(x => x.UserID == UserID).Select(x => x.ChocolateCount).FirstOrDefault();
+                }
+
+                public static ulong[] GetTopChoco(int count)
+                {
+                    using (var databaseContext = new DatabaseContext())
+                        return databaseContext.Users.OrderByDescending(x => x.ChocolateCount).Select(x => x.UserID).Take(count).ToArray();
+                }
+            }
+
             #region UserChallenges
             public static int GetCompletedChallenges(ulong UserID)
             {
@@ -267,6 +265,7 @@ namespace AHH_Bot.Database
 
         public class Guilds
         {
+            // Returns if a guild exists in the database and creates a new guild if it doesn't
             private static bool GuildExisted(DatabaseContext databaseContext, ulong ServerID, string Courses = "")
             {
                 if (!databaseContext.Guilds.Any(x => x.ServerID == ServerID))

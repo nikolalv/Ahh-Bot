@@ -23,7 +23,7 @@ namespace AHH_Bot.Commands
                 .WithTitle("Displaying Stats for "+user.Nickname)
                 .WithColor(66, 244, 134)
                 .WithThumbnailUrl(user.GetAvatarUrl())
-                .AddField("Total Chocolates :chocolate_bar:", Data.Chocolates.GetChocolateAmount(user.Id), true)
+                .AddField("Total Chocolates :chocolate_bar:", Data.Users.Chocolates.GetChocolateAmount(user.Id), true)
                 .AddField("Messages Sent :e_mail:", Data.Users.Messages.GetSentMsgAmount(user.Id), true)
                 .AddField("Votes Created :white_check_mark:", Data.Users.Messages.GetTotalVoteAmount(user.Id), true)
                 .AddField("Reaction Count 🔥", Data.Users.Messages.GetReactionAmount(user.Id), true)

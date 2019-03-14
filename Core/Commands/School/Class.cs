@@ -12,9 +12,9 @@ using Discord.WebSocket;
 namespace AHH_Bot.Commands
 {
     [Group("class")]
-    public class School : ModuleBase<SocketCommandContext>
+    public class Class : ModuleBase<SocketCommandContext>
     {
-        [Command("")]
+        [Command(""), Alias("cancelled")]
         public async Task CancelledClasses()
         {
             var embed = new EmbedBuilder()
@@ -25,7 +25,7 @@ namespace AHH_Bot.Commands
             using (var client = new CookieAwareWebClient())
             {
                 var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(client.DownloadString("http://johnabbott-cancelledclasses.omnivox.ca/"));
+                htmlDoc.LoadHtml(await client.DownloadStringTaskAsync(new Uri("http://johnabbott-cancelledclasses.omnivox.ca/")));
                 var pageTables = htmlDoc.DocumentNode.SelectNodes("/div[1]/html[1]/body[1]/div[1]/table[1]/tr[1]/td[1]/table[1]/tr[1]/td[1]/table");
 
                 string[] coursesToTrack = Data.Users.GetCourses(Context.User.Id).Union(Data.Guilds.GetCourses(Context.Guild.Id)).ToArray();
@@ -35,30 +35,30 @@ namespace AHH_Bot.Commands
                     if (pageTables[i].InnerText.Contains(DateTime.Now.Year.ToString()))
                     {
                         if (pageTables[i].InnerText.Contains("No course has been cancelled for this day"))
-                        {
-                            embed.AddField(pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""), "No course has been cancelled for this day");
-                            continue;
-                        }
-                        embed.AddField(pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""), "\u200b");
+                            embed.AddField(pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""), "No cancelled classes for this day.");
+                        else
+                            embed.AddField("\u200b", pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""));
                     }
-                    else
+                    else if (coursesToTrack.Any(x => pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[1]").InnerText.Contains(x)))
                     {
-                        if (coursesToTrack.Any(x => pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[1]").InnerText.Contains(x)))
+                        embed.AddField(x =>
                         {
-                            embed.AddField(x =>
-                            {
-                                x.Name = pageTables[i].SelectSingleNode("tr[1]/td[3]/br[1]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "");
+                            x.Name = pageTables[i].SelectSingleNode("tr[1]/td[3]/br[1]").PreviousSibling.InnerText.Replace("&nbsp;", "");
 
-                                x.Value = "\n" + pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[2]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "") +
-                                          "\n" + pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[1]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "");
-                                x.IsInline = true;
-                            });
-                        }
+                            string courseCode = pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[1]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "");
+
+                            x.Value = pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[2]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "") +
+                                      "\n" + courseCode.Remove(courseCode.IndexOf("(room"));
+                            x.IsInline = false;
+                        });
                     }
                 }
             }
 
-                await Context.Channel.SendMessageAsync(null, false, embed.Build());
+            if (embed.Fields.Count == 1 && embed.Fields[0].Name == "\u200b")
+                embed.Fields[0].Value = "None of the classes in your list are cancelled.\nYou can add a class with `!class add <Course Code>`";
+
+            await Context.Channel.SendMessageAsync(null, false, embed.Build());
         }
 
         [Command("add")]
@@ -179,7 +179,48 @@ namespace AHH_Bot.Commands
 
             await Context.Channel.SendMessageAsync(null, false, embed.Build());
         }
+
+        [Command("cancelled all")]
+        public async Task AllCancelledClasses()
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("Cancelled Classes as of " + DateTime.Now.ToLongTimeString())
+                .WithAuthor("John Abott College", "http://www.johnabbott.qc.ca/wp-content/uploads/2017/10/Islanders-logo_250x250.jpg", "http://johnabbott-cancelledclasses.omnivox.ca/")
+                .WithColor(114, 132, 249);
+
+            using (var client = new CookieAwareWebClient())
+            {
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(await client.DownloadStringTaskAsync(new Uri("http://johnabbott-cancelledclasses.omnivox.ca/")));
+                var pageTables = htmlDoc.DocumentNode.SelectNodes("/div[1]/html[1]/body[1]/div[1]/table[1]/tr[1]/td[1]/table[1]/tr[1]/td[1]/table");
+
+                for (int i = 1; i < pageTables.Count; i++)
+                {
+                    if (pageTables[i].InnerText.Contains(DateTime.Now.Year.ToString()))
+                    {
+                        if (pageTables[i].InnerText.Contains("No course has been cancelled for this day"))
+                            embed.AddField(pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""), "No cancelled classes for this day.");
+                        else
+                            embed.AddField("\u200b", pageTables[i].SelectSingleNode("tr[1]").InnerText.Replace("Today,", ""));
+                    }
+                    else
+                        embed.AddField(x =>
+                        {
+                            x.Name = pageTables[i].SelectSingleNode("tr[1]/td[3]/br[1]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "");
+
+                            string courseCode = pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[1]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "");
+
+                            x.Value = pageTables[i].SelectSingleNode("tr[1]/td[3]/font[2]/br[2]").PreviousSibling.InnerText.Trim().Replace("&nbsp;", "") +
+                                      "\n" + courseCode.Remove(courseCode.IndexOf("(room"));
+                            x.IsInline = false;
+                        });
+                }
+            }
+
+            await Context.Channel.SendMessageAsync(null, false, embed.Build());
+        }
     }
+
 
     // ================================================
     // Webpages that requires cookies to be viewed 
