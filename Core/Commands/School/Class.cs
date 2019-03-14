@@ -18,9 +18,10 @@ namespace AHH_Bot.Commands
         public async Task CancelledClasses()
         {
             var embed = new EmbedBuilder()
-                .WithTitle("Cancelled Classes as of "+DateTime.Now.ToLongTimeString())
+                .WithTitle($"{(Context.User as SocketGuildUser).Nickname}'s Cancelled Classes")
                 .WithAuthor("John Abott College", "http://www.johnabbott.qc.ca/wp-content/uploads/2017/10/Islanders-logo_250x250.jpg", "http://johnabbott-cancelledclasses.omnivox.ca/")
-                .WithColor(114, 132, 249);
+                .WithColor(114, 132, 249)
+                .WithCurrentTimestamp();
 
             using (var client = new CookieAwareWebClient())
             {
@@ -184,9 +185,10 @@ namespace AHH_Bot.Commands
         public async Task AllCancelledClasses()
         {
             var embed = new EmbedBuilder()
-                .WithTitle("Cancelled Classes as of " + DateTime.Now.ToLongTimeString())
+                .WithTitle("All Cancelled Classes")
                 .WithAuthor("John Abott College", "http://www.johnabbott.qc.ca/wp-content/uploads/2017/10/Islanders-logo_250x250.jpg", "http://johnabbott-cancelledclasses.omnivox.ca/")
-                .WithColor(114, 132, 249);
+                .WithColor(114, 132, 249)
+                .WithCurrentTimestamp();
 
             using (var client = new CookieAwareWebClient())
             {
